@@ -72,6 +72,22 @@ mint_block_on(
     // And away we go!!!
     mint_yield();
 
+    // After here, new_cr should be complete, and it
+    // should be waiting in the completed list.
+    //dbg_assert(new_cr->status.tag == COMPLETE);
+
+    queue_unlink(rt_complete(), new_cr);
+
+    // Now we can say that we're done as well
+    // If this call came from a coroutine, then
+    // we can change its status, otherwise we
+    // can get rid of our coroutine block completely.
+    if (curr_cr->parent == 0) {
+        // Non-coroutine
+
+    } else {
+        // Coroutine
+    }
 
     cache_push(_c, curr_cr);
 cache_new:

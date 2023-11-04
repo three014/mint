@@ -13,6 +13,7 @@ struct runtime {
     mint_t current; 
     queue ready;
     queue waiting;
+    queue complete;
     cache recycled_cr;
 };
 
@@ -22,6 +23,11 @@ static pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
 mint_t
 rt_current(void) {
     return rt.current;
+}
+
+queue *
+rt_complete(void) {
+    return &rt.complete;
 }
 
 queue *

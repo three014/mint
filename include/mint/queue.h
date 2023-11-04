@@ -8,6 +8,7 @@ typedef struct {
     struct coroutine *curr;
 } queue;
 
+void queue_unlink(queue *queue, struct coroutine *cr);
 void queue_link(queue *queue, struct coroutine *cr);
 struct coroutine *queue_rotate_left(queue *queue);
 

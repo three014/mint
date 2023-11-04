@@ -1,6 +1,11 @@
 #include "mint/queue.h"
 #include "mint/coroutine.h"
 
+void queue_unlink(queue *queue, struct coroutine *cr) {
+    // TODO: Complete function
+    __builtin_trap();
+}
+
 void queue_link(queue *queue, struct coroutine *cr) {
     struct coroutine *curr;
     switch (queue->len) {
