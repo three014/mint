@@ -11,5 +11,6 @@ typedef struct {
 
 void cache_push(cache *cache, struct coroutine *cached_cr);
 struct coroutine *cache_pop(cache *cache);
+struct coroutine *cache_pop_else_alloc(cache *cache);
 
 #endif

@@ -10,6 +10,7 @@ typedef uintptr_t mint_t;
 #define M_SUCCESS     0x0
 #define M_NOT_OWNER   0x1
 #define M_NOT_RUNNING 0x2
+#define M_ALLOC_FAIL  0x4
 
 int  mint_create(mint_t *handle, void *(*routine)(void *args), void *args);
 int  mint_spawn(mint_t *handle, void *(*routine)(void *args), void *args);

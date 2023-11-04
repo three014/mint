@@ -52,7 +52,7 @@ Mkfile.old
 dkms.conf
 
 # Autotools
-*.in
+*.in*
 *.log
 *.status
 *.sub
@@ -79,3 +79,7 @@ compile
 
 # LSP-related
 compile_commands.json
+
+# Notes
+Scratch*
+.obsidian/

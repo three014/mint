@@ -3,6 +3,7 @@
 #include "mint/memcache.h"
 #include "mint/runtime.h"
 #include "mint/queue.h"
+#include "mint/status.h"
 
 int
 mint_pin(void) {
@@ -31,49 +32,50 @@ mint_block_on(
     // Check if we have a spare coroutine object
     // we can use, or else make a new one
     cache *_c = rt_cache();
-    struct coroutine *new_cr = cache_pop(_c);
+    struct coroutine *new_cr = cache_pop_else_alloc(_c);
     if (new_cr == NULL) {
-        new_cr = cr_alloc();
-        if (new_cr == NULL) {
-            goto finally;
-        }
+        err = M_ALLOC_FAIL;
+        goto finally;
     }
 
     // Set coroutine to use
     // user-specified arguments
     cr_set(new_cr, routine, args);
 
-    
     // Check if we're in a coroutine,
     // aka if the runtime is currently
     // running a coroutine
-    struct context *ctx;
+    struct coroutine *curr_cr;
     mint_t curr = rt_current();
     if (curr != 0) {
-        struct coroutine *curr_cr = cr_from_handle(curr);
-        ctx = &curr_cr->ctx;
+        curr_cr = cr_from_handle(curr);
     } else {
-        ctx = ctx_alloc();
-        if (ctx == NULL) {
-            goto ctx_failed;
+        curr_cr = cache_pop_else_alloc(_c);
+        if (curr_cr == NULL) {
+            err = M_ALLOC_FAIL;
+            goto cache_new;
         }
+        cr_set(curr_cr, NULL, NULL);
+
+        // Set current coroutine to curr
+        rt_set_current(curr_cr->self);
     }
 
-    
+    // Link curr and new coroutines
+    curr_cr->status = STATUS_WAITING(new_cr->self);
+    new_cr->parent = curr_cr->self;
 
-    // Set runtime to new coroutine
-    rt_set_current(new_cr->self);
-  
-    // Link with the ready queue
-    queue *_q = rt_ready();
-    queue_link(_q, new_cr);
+    // Add both coroutines to their respective queues
+    queue_link(rt_ready(), new_cr);
+    queue_link(rt_waiting(), curr_cr);
+
+    // And away we go!!!
+    mint_yield();
 
 
-    // We did it! We can leave!!
-    goto finally;
-
-ctx_failed:
-    free(ctx);
+    cache_push(_c, curr_cr);
+cache_new:
+    cache_push(_c, new_cr);
 
 finally:
     return err;
