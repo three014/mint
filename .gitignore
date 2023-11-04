@@ -57,6 +57,7 @@ dkms.conf
 *.status
 *.sub
 configure
+configure~
 depcomp
 install-sh
 libtool

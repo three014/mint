@@ -15,9 +15,6 @@ void queue_link(queue *queue, struct coroutine *cr) {
         curr->prev = cr;
         cr->next = curr;
         cr->prev = curr;
-
-        // Set curr to new node
-        queue->curr = curr->next;
         break;
     default:
         curr = queue->curr;
@@ -31,11 +28,24 @@ void queue_link(queue *queue, struct coroutine *cr) {
         next->prev = cr;
         cr->next = next;
         cr->prev = curr;
-
-        // Set curr to new node
-        queue->curr = curr->next;
         break;
     }
 
     queue->len++;
+}
+
+struct coroutine *queue_rotate_left(queue *queue) {
+    struct coroutine *next;
+    switch (queue->len) {
+    case 0:
+    case 1:
+        next = queue->curr;
+        break;
+    default:
+        queue->curr = queue->curr->next;
+        next = queue->curr;
+        break;
+    }
+
+    return next;
 }

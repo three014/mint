@@ -16,14 +16,14 @@ cache_pop(cache *cache) {
 }
 
 struct coroutine *
-coroutine_from_cache(
+cache_into_cr(
     struct cached_coroutine *cached_cr, 
     void *(*routine)(void *args), 
     void *args
 ) {
     struct coroutine *cr = cached_cr->cr;
     cr->stack = cached_cr->mapping;
-    coroutine_set(cr, routine, args);
+    cr_set(cr, routine, args);
     cache_delete(cached_cr);
     
     return cr;

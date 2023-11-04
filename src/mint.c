@@ -31,21 +31,49 @@ mint_block_on(
     // Check if we have a spare coroutine object
     // we can use, or else make a new one
     cache *_c = rt_cache();
-    struct cached_coroutine *cache = cache_pop(_c);
-    struct coroutine *cr;
-    if (cache != NULL) {
-        cr = cache_into_cr(cache, routine, args);
-    } else {
-        cr = cr_alloc();
-        cr_set(cr, routine, args);
+    struct coroutine *new_cr = cache_pop(_c);
+    if (new_cr == NULL) {
+        new_cr = cr_alloc();
+        if (new_cr == NULL) {
+            goto finally;
+        }
     }
 
-    // Link with the ready queue
-    queue *_q = rt_ready();
-    queue_link(_q, cr);
+    // Set coroutine to use
+    // user-specified arguments
+    cr_set(new_cr, routine, args);
+
+    
+    // Check if we're in a coroutine,
+    // aka if the runtime is currently
+    // running a coroutine
+    struct context *ctx;
+    mint_t curr = rt_current();
+    if (curr != 0) {
+        struct coroutine *curr_cr = cr_from_handle(curr);
+        ctx = &curr_cr->ctx;
+    } else {
+        ctx = ctx_alloc();
+        if (ctx == NULL) {
+            goto ctx_failed;
+        }
+    }
+
     
 
+    // Set runtime to new coroutine
+    rt_set_current(new_cr->self);
+  
+    // Link with the ready queue
+    queue *_q = rt_ready();
+    queue_link(_q, new_cr);
 
+
+    // We did it! We can leave!!
+    goto finally;
+
+ctx_failed:
+    free(ctx);
 
 finally:
     return err;

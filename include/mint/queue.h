@@ -9,5 +9,6 @@ typedef struct {
 } queue;
 
 void queue_link(queue *queue, struct coroutine *cr);
+struct coroutine *queue_rotate_left(queue *queue);
 
 #endif

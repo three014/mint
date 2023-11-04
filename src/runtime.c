@@ -44,6 +44,11 @@ owns_rt(void) {
     return rt.thread == pthread_self();
 }
 
+void
+rt_set_current(mint_t current) {
+    rt.current = current;
+}
+
 int 
 rt_pin(void) {
     int err = M_SUCCESS;

@@ -16,6 +16,7 @@ mint_t rt_current(void);
 queue *rt_ready(void);
 queue *rt_waiting(void);
 cache *rt_cache(void);
+void rt_set_current(mint_t current);
 
 
 

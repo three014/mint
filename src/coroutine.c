@@ -5,7 +5,7 @@
 #include <stdlib.h>
 
 struct coroutine *
-coroutine_alloc(void) {
+cr_alloc(void) {
     struct coroutine *cr = NULL;
     void *stack = mmap(
         NULL, 
@@ -35,15 +35,19 @@ finally:
 }
 
 void
-coroutine_set(struct coroutine *cr, void *(*routine)(void *args), void *args) {
+cr_set(struct coroutine *cr, void *(*routine)(void *args), void *args) {
     // Stack was already set in alloc
     cr->routine = routine;
     cr->args = args;
     cr->next = NULL;
     cr->prev = NULL;
     cr->ret = NULL;
-    cr->depends_on = 0;
+    cr->parent = 0;
     cr->self = (mint_t)cr;
     cr->status = STATUS_READY;
 }
 
+void cr_delete(struct coroutine *cr) {
+    munmap(cr->stack, __MINT_STACK_SIZE);
+    free(cr);
+}

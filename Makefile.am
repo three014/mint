@@ -5,4 +5,7 @@ libmint_la_CFLAGS = '-I$(top_srcdir)/include' '-lpthread'
 
 libmint_la_SOURCES = \
 	src/mint.c \
-	src/runtime/runtime.c
+	src/runtime.c \
+	src/queue.c \
+	src/coroutine.c \
+	src/memcache.c
