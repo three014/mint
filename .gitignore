@@ -50,3 +50,31 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# Autotools
+*.in
+*.log
+*.status
+*.sub
+configure
+depcomp
+install-sh
+libtool
+ltmain.sh
+m4/
+missing
+*.deps/
+*.dirstamp
+stamp-h1
+.cache/
+.libs/
+aclocal.m4
+ar-lib
+*.cache/
+config.h
+config.guess
+Makefile
+compile
+
+# LSP-related
+compile_commands.json

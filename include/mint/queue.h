@@ -8,4 +8,6 @@ typedef struct {
     struct coroutine *curr;
 } queue;
 
+void queue_link(queue *queue, struct coroutine *cr);
+
 #endif

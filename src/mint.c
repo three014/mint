@@ -2,6 +2,7 @@
 #include "mint/coroutine.h"
 #include "mint/memcache.h"
 #include "mint/runtime.h"
+#include "mint/queue.h"
 
 int
 mint_pin(void) {
@@ -19,7 +20,7 @@ mint_block_on(
     void *args, 
     void **ret
 ) {
-    int err = 0;
+    int err = M_SUCCESS;
 
     // Check if we have the runtime
     if (!owns_rt()) {
@@ -38,6 +39,11 @@ mint_block_on(
         cr = cr_alloc();
         cr_set(cr, routine, args);
     }
+
+    // Link with the ready queue
+    queue *_q = rt_ready();
+    queue_link(_q, cr);
+    
 
 
 

@@ -43,7 +43,7 @@ coroutine_set(struct coroutine *cr, void *(*routine)(void *args), void *args) {
     cr->prev = NULL;
     cr->ret = NULL;
     cr->depends_on = 0;
-    cr->self = (mint_t)cr->stack;
+    cr->self = (mint_t)cr;
     cr->status = STATUS_READY;
 }
 
