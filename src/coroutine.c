@@ -36,10 +36,8 @@ finally:
 }
 
 void
-cr_set(struct coroutine *cr, void *(*routine)(void *args), void *args) {
+cr_set(struct coroutine *cr) {
     // Stack was already set in alloc
-    cr->routine = routine;
-    cr->args = args;
     cr->next = NULL;
     cr->prev = NULL;
     cr->parent = 0;
@@ -48,22 +46,21 @@ cr_set(struct coroutine *cr, void *(*routine)(void *args), void *args) {
 }
 
 void
-cr_init_stack(struct coroutine *cr) {
+cr_init_stack(struct coroutine *cr, void *(*routine)(void *args), void *args) {
     // We need to setup the stack now
     void **stack = cr->stack;
 
-    // Top of the stack is the return address for mint_return, which
-    // all coroutines return to upon completion
-    stack[0] = mint_return; // Old rip
+    stack[0] = end_coroutine; // Old rip, will call mint_return
     stack[-1] = 0; // TODO: Some sort of 'old rbp' address
                    //       Can it be null? Since we won't be returning
-                   //       from `mint_return`
-    stack[-2] = cr->routine; // Old rip
-    stack[-3] = &stack[-1]; // Old rbp
+                   //       from mint_return
+    stack[-2] = args; // Args that we wanna place in %rdi
+    stack[-3] = routine; // Function pointer, place in any silly register
+    stack[-4] = start_coroutine; // Old rip, will call function at func pointer
 
-    // Therefore, first usable address will be stack[-3]
+    // Therefore, first usable address will be stack[-4]
     // So we can go ahead and set the stack pointer
-    cr->ctx.rsp = (uintptr_t)&stack[-3];
+    cr->ctx.rsp = (uintptr_t)&stack[-4];
 }
 
 void cr_delete(struct coroutine *cr) {

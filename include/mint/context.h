@@ -14,5 +14,7 @@ struct context {
 };
 
 void ctx_switch(struct context *curr, struct context *new);
+void start_coroutine(void);
+void end_coroutine(void);
 
 #endif

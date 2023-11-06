@@ -7,6 +7,7 @@
 #include "mint/status.h"
 
 #include <assert.h>
+#include <stdlib.h>
 
 int
 mint_pin(void) {
@@ -43,8 +44,8 @@ mint_block_on(
 
     // Set coroutine to use
     // user-specified arguments
-    cr_set(new_cr, routine, args);
-    cr_init_stack(new_cr);
+    cr_set(new_cr);
+    cr_init_stack(new_cr, routine, args);
 
     // Check if we're in a coroutine,
     // aka if the runtime is currently
@@ -59,7 +60,7 @@ mint_block_on(
             err = M_ALLOC_FAIL;
             goto cache_new;
         }
-        cr_set(curr_cr, NULL, NULL);
+        cr_set(curr_cr);
 
         // Set current coroutine to curr
         rt_set_current(curr_cr->self);
@@ -145,7 +146,7 @@ mint_return(void *ret) {
         // coroutine, otherwise
         // this return would crash or
         // corrupt the program??
-        return;
+        abort();
     }
 
     struct coroutine *curr_cr = cr_from_handle(curr);
