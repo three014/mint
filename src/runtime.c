@@ -2,6 +2,7 @@
 #include "mint/runtime.h"
 #include "mint/queue.h"
 #include "mint/memcache.h"
+#include <stdint.h>
 
 #define _GNU_SOURCE
 #include <stdlib.h>
@@ -15,6 +16,7 @@ struct runtime {
     queue waiting;
     queue complete;
     cache recycled_cr;
+    uintptr_t canary;
 };
 
 static struct runtime rt = {0};
@@ -55,6 +57,11 @@ rt_set_current(mint_t current) {
     rt.current = current;
 }
 
+uintptr_t
+rt_canary(void) {
+    return rt.canary;
+}
+
 int 
 rt_pin(void) {
     int err = M_SUCCESS;
@@ -66,6 +73,11 @@ rt_pin(void) {
         if (result == 0 && rt.thread == 0) {
             // This thread is the owner
             rt.thread = self;
+            // Nothing too secure here,
+            // we just want a quick way to ensure
+            // that the caller of any mint function
+            // is a coroutine.
+            rt.canary = rand();
             pthread_mutex_unlock(&mtx);
         }
     }

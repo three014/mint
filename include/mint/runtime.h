@@ -5,6 +5,8 @@
 #include "memcache.h"
 #include "queue.h"
 
+#include <stdint.h>
+
 /// Pins global runtime to the current thread, if not already done.
 int rt_pin(void);
 int rt_unpin(void);
@@ -23,6 +25,7 @@ queue *rt_waiting(void);
 queue *rt_complete(void);
 
 cache *rt_cache(void);
+uintptr_t rt_canary(void);
 void rt_set_current(mint_t current);
 
 

@@ -2,8 +2,35 @@
 #include "mint/coroutine.h"
 
 void queue_unlink(queue *queue, struct coroutine *cr) {
-    // TODO: Complete function
-    __builtin_trap();
+    struct coroutine *left, *right;
+    switch (queue->len) {
+    case 0:
+        break;
+    case 1:
+        queue->curr = NULL;
+        queue->len--;
+        break;
+    case 2:
+        queue->curr = cr->next;
+        queue->curr->next = NULL;
+        queue->curr->prev = NULL;
+        queue->len--;
+        break;
+    default:
+        if (queue->curr == cr) {
+            queue->curr = cr->next;
+        }
+
+        left = cr->prev;
+        right = cr->next;
+        left->next = right;
+        right->prev = left;
+
+        queue->len--;
+    }
+
+    cr->next = NULL;
+    cr->prev = NULL;
 }
 
 void queue_link(queue *queue, struct coroutine *cr) {

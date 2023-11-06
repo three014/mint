@@ -30,10 +30,10 @@ start_coroutine:
         popq %rdi
 
         # Jumps to the function without creating a
-        # call stack - that way when the function
+        # call frame - that way when the function
         # returns, it'll return to end_coroutine
         # automatically.
-        jmp %rax
+        jmp (%rax)
 
 # void end_coroutine(void);
 end_coroutine:
