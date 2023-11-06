@@ -5,6 +5,8 @@
 #include "mint/queue.h"
 #include "mint/status.h"
 
+#include <assert.h>
+
 int
 mint_pin(void) {
     return rt_pin();
@@ -47,7 +49,7 @@ mint_block_on(
     // running a coroutine
     struct coroutine *curr_cr;
     mint_t curr = rt_current();
-    if (curr != 0) {
+    if (curr != M_ROOT) {
         curr_cr = cr_from_handle(curr);
     } else {
         curr_cr = cache_pop_else_alloc(_c);
@@ -74,24 +76,56 @@ mint_block_on(
 
     // After here, new_cr should be complete, and it
     // should be waiting in the completed list.
-    //dbg_assert(new_cr->status.tag == COMPLETE);
-
+    assert(new_cr->status.tag == COMPLETE);
     queue_unlink(rt_complete(), new_cr);
 
-    // Now we can say that we're done as well
-    // If this call came from a coroutine, then
-    // we can change its status, otherwise we
-    // can get rid of our coroutine block completely.
-    if (curr_cr->parent == 0) {
-        // Non-coroutine
-
-    } else {
-        // Coroutine
+    // We save the coroutine's return value
+    if (ret != NULL) {
+        *ret = new_cr->status.value.ret;
     }
 
-    cache_push(_c, curr_cr);
+    // Now we can say that we're done as well
+    // If this call came from a regular function,
+    // then we need to clean up our state.
+    if (curr_cr->parent == M_ROOT) {
+        // Coroutine object will be in ready queue,
+        // since that's the only way we'd be able to
+        // return from the yield
+        queue_unlink(rt_ready(), curr_cr);
+        curr_cr->status = STATUS_COMPLETE(NULL);
+
+        // Runtime is no longer running anything
+        rt_set_current(M_ROOT);
+
+        // We are done with this coroutine,
+        // send to the cache!
+        cache_push(_c, curr_cr);
+    }
+
 cache_new:
     cache_push(_c, new_cr);
+
+finally:
+    return err;
+}
+
+int
+mint_yield(void) {
+    int err = M_SUCCESS;
+
+    if (!owns_rt()) {
+        err = M_NOT_OWNER;
+        goto finally;
+    }
+
+    mint_t curr = rt_current();
+    if (curr == M_ROOT) {
+        err = M_NOT_RUNNING;
+        goto finally;
+    }
+
+    struct coroutine *curr_cr = cr_from_handle(curr);
+    struct coroutine *next_cr = queue_rotate_left(rt_ready());
 
 finally:
     return err;

@@ -9,6 +9,8 @@
 #define __MINT_STACK_SIZE 0x200
 #endif
 
+#define M_ROOT 0
+
 struct context {
     uintptr_t rsp;
     uintptr_t rbp;
@@ -24,7 +26,6 @@ struct coroutine {
     mint_t parent;
     void *(*routine)(void *args);
     void *args;
-    void *ret;
     void *stack;
     struct context ctx;
     struct status status;

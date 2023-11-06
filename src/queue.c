@@ -42,12 +42,10 @@ void queue_link(queue *queue, struct coroutine *cr) {
 struct coroutine *queue_rotate_left(queue *queue) {
     struct coroutine *next;
     switch (queue->len) {
-    case 0:
-    case 1:
-        next = queue->curr;
-        break;
     default:
         queue->curr = queue->curr->next;
+    case 0:
+    case 1:
         next = queue->curr;
         break;
     }
