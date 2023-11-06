@@ -1,4 +1,5 @@
 #include "mint.h"
+#include "mint/context.h"
 #include "mint/coroutine.h"
 #include "mint/memcache.h"
 #include "mint/runtime.h"
@@ -43,6 +44,7 @@ mint_block_on(
     // Set coroutine to use
     // user-specified arguments
     cr_set(new_cr, routine, args);
+    cr_init_stack(new_cr);
 
     // Check if we're in a coroutine,
     // aka if the runtime is currently
@@ -127,6 +129,44 @@ mint_yield(void) {
     struct coroutine *curr_cr = cr_from_handle(curr);
     struct coroutine *next_cr = queue_rotate_left(rt_ready());
 
+    ctx_switch(&curr_cr->ctx, &next_cr->ctx);
+
 finally:
     return err;
+}
+
+void
+mint_return(void *ret) {
+    mint_t curr = rt_current();
+    if (curr == M_ROOT) {
+        // If we got to here, then
+        // we're really hoping this
+        // call wasn't made from a
+        // coroutine, otherwise
+        // this return would crash or
+        // corrupt the program??
+        return;
+    }
+
+    struct coroutine *curr_cr = cr_from_handle(curr);
+    mint_t parent = curr_cr->parent;
+    struct coroutine *parent_cr = cr_from_handle(parent);
+
+    // Move current coroutine to 'Complete' list
+    queue_unlink(rt_ready(), curr_cr);
+    curr_cr->status = STATUS_COMPLETE(ret);
+    queue_link(rt_complete(), curr_cr);
+
+    // Assumption #2: The returned coroutine
+    // has to have a parent, or else it'd return to
+    // `mint_block_on`.
+
+    // Move parent coroutine to 'Ready' queue
+    queue_unlink(rt_waiting(), parent_cr);
+    parent_cr->status = STATUS_READY;
+    queue_link(rt_ready(), parent_cr);
+
+    rt_set_current(parent);
+
+    mint_yield();
 }

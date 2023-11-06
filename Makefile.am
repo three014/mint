@@ -1,6 +1,6 @@
 lib_LTLIBRARIES = libmint.la
 
-ACLOCAL_AMFLAGS = '-I m4'
+ACLOCAL_AMFLAGS = '-Im4'
 libmint_la_CFLAGS = '-I$(top_srcdir)/include' '-lpthread'
 
 libmint_la_SOURCES = \
@@ -8,4 +8,5 @@ libmint_la_SOURCES = \
 	src/runtime.c \
 	src/queue.c \
 	src/coroutine.c \
+	src/context.S \
 	src/memcache.c
