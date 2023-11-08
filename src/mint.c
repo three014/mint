@@ -5,7 +5,6 @@
 #include "mint/runtime.h"
 #include "mint/queue.h"
 #include "mint/status.h"
-#include "mint/utils.h"
 #include "log.h"
 
 #include <assert.h>
@@ -13,20 +12,6 @@
 #include <stdlib.h>
 
 void __mint_yield(void);
-
-inline uintptr_t
-canary(void) {
-    // We look two addresses higher than where the base pointer,
-    // points to, since we need to move past the call frame of
-    // the mint function that called this function, and
-    // since that's where our canary value should be located.
-
-    // That being said, it's really important that this function
-    // does not move the base pointer itself, or else that
-    // would defeat its purpose.
-    uintptr_t ret = *(((uintptr_t *)(*(uintptr_t *)get_rbp())) + 2);
-    return ret;
-}
 
 int
 mint_pin(void) {
@@ -66,7 +51,7 @@ mint_block_on(
     cr_set(new_cr);
     cr_init_stack(new_cr, routine, args);
 
-    __logln_dbg_fmt("Created stack and coroutine for %lu", new_cr->self);
+    __logln_dbg_fmt("Created stack and coroutine for %lx", new_cr->self);
 
     // Check if we're in a coroutine,
     // aka if the runtime is currently
@@ -97,6 +82,8 @@ mint_block_on(
     // Add both coroutines to their respective queues
     queue_link(rt_ready(), new_cr);
     queue_link(rt_waiting(), curr_cr);
+
+    cr_dbg(new_cr);
 
     // And away we go!!!
     __mint_yield();
@@ -151,24 +138,7 @@ mint_yield(void) {
         goto finally;
     }
 
-    __logln_dbg_fmt("Entered yield from %lu", curr);
-
-    // TODO: Check if we were called
-    // from a normal function.
-    //
-    // How to do this?
-    // We could place a special value behind
-    // the old rip on the stack, so that we
-    // can easily retrieve it if and only if
-    // we're still in the starting function
-    uintptr_t c = canary();
-    uintptr_t rt_c = rt_canary();
-    __logln_dbg_fmt("Canary we found: %lu, Runtime's canary: %lu", c, rt_c);
-    if (c != rt_c) {
-        err = M_NOT_DIRECT;
-        __logln_dbg("Canary not found, returning without switching");
-        goto finally;
-    }
+    //__logln_dbg_fmt("Entered yield from %lx", curr);
 
     __mint_yield();
 
@@ -181,7 +151,9 @@ __mint_yield(void) {
     struct coroutine *curr_cr = cr_from_handle(rt_current());
     struct coroutine *next_cr = queue_rotate_left(rt_ready());
 
-    __logln_dbg("About to switch!");
+    rt_set_current(next_cr->self);
+
+    //__logln_dbg("About to switch!");
     ctx_switch(&curr_cr->ctx, &next_cr->ctx);
 }
 
@@ -202,6 +174,8 @@ mint_return(void *ret) {
     mint_t parent = curr_cr->parent;
     struct coroutine *parent_cr = cr_from_handle(parent);
 
+    cr_dbg(curr_cr);
+
     // Move current coroutine to 'Complete' list
     queue_unlink(rt_ready(), curr_cr);
     curr_cr->status = STATUS_COMPLETE(ret);
@@ -216,7 +190,5 @@ mint_return(void *ret) {
     parent_cr->status = STATUS_READY;
     queue_link(rt_ready(), parent_cr);
 
-    rt_set_current(parent);
-
-    mint_yield();
+    __mint_yield();
 }

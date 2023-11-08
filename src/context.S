@@ -1,5 +1,5 @@
 .section .text
-.globl ctx_switch, start_coroutine, end_coroutine, mint_return
+.globl ctx_switch, start_coroutine, mint_return
 
 # void ctx_switch(struct coroutine *curr, struct coroutine *next);
 ctx_switch:
@@ -23,24 +23,21 @@ ctx_switch:
 
 # void start_coroutine(void);
 start_coroutine:
+        sub $0x18, %rsp
+        
         # Pops the function pointer off the stack
         popq %rax
 
         # Pops the function argument `args` off the stack
         popq %rdi
 
-        # Jumps to the function without creating a
-        # call frame - that way when the function
-        # returns, it'll return to end_coroutine
-        # automatically.
-        jmp (%rax)
+        # Start the function for this coroutine
+        call %rax
 
-# void end_coroutine(void);
-end_coroutine:
-        # If we made it here, then we naturally
-        # returned from a coroutine, so we need
-        # to do one final thing before we go to
-        # `mint_return`
+        # If we came back, then the coroutine has completed,
+        # and if they specified a value to return, we'll move
+        # it into %rdi so it can be the first argument to
+        # `mint_return`.
         movq %rax, %rdi
         jmp mint_return
-        
+     

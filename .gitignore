@@ -76,6 +76,8 @@ config.h
 config.guess
 Makefile
 compile
+test-driver
+build/
 
 # LSP-related
 compile_commands.json

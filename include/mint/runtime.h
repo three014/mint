@@ -25,7 +25,6 @@ queue *rt_waiting(void);
 queue *rt_complete(void);
 
 cache *rt_cache(void);
-uintptr_t rt_canary(void);
 void rt_set_current(mint_t current);
 
 

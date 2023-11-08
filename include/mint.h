@@ -13,8 +13,8 @@ typedef uintptr_t mint_t;
 #define M_ALLOC_FAIL  0x4
 #define M_NOT_DIRECT  0x8
 
-int  mint_create(mint_t *handle, void *(*routine)(void *args), void *args);
-int  mint_spawn(mint_t *handle, void *(*routine)(void *args), void *args);
+int  mint_create(mint_t *restrict handle, void *(*routine)(void *args), void *restrict args);
+int  mint_spawn(mint_t *restrict handle, void *(*routine)(void *args), void *restrict args);
 int  mint_await(mint_t handle, void **ret);
 
 /// Transfers execution to the runtime,

@@ -10,12 +10,16 @@ libmint_la_SOURCES = \
 	src/queue.c \
 	src/coroutine.c \
 	src/context.S \
-	src/memcache.c \
-	src/utils.c
+	src/memcache.c
 
 
-TESTS = simple
-check_PROGRAMS = simple
+TESTS = simple pthread_check
+check_PROGRAMS = simple pthread_check
+
+pthread_check_SOURCES = test/pthread-test.c
+pthread_check_CFLAGS = '-I$(top_srcdir)/include' -DLOG_LEVEL=4 -ggdb
+pthread_check_LDFLAGS = -lpthread
+
 simple_SOURCES = test/first-test.c
-simple_CFLAGS = '-I$(top_srcdir)/include' -DLOG_LEVEL=4
-simple_LDADD = $(top_srcdir)/libmint.la
+simple_CFLAGS = '-I$(top_srcdir)/include' -DLOG_LEVEL=4 -ggdb
+simple_LDADD = $(top_srcdir)/build/libmint.la
