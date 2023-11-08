@@ -17,7 +17,7 @@ void cr_dbg(struct coroutine *cr) {
     __logln_dbg_fmt("coroutine 0x%lx", cr->self);
     __logln_dbg_fmt("\tParent: 0x%lx", cr->parent);
     __logln_dbg_fmt("\tStatus: %s", (cr->status.tag == READY) ? "Ready" : "Probably Waiting");
-    __logln_dbg("\tContext:");
+    __logln_dbg_fmt("\t", "Context:");
     __logln_dbg_fmt("\t\trsp: 0x%lx", cr->ctx.rsp);
     __logln_dbg_fmt("\t\trbp: 0x%lx", cr->ctx.rbp);
     __logln_dbg_fmt("\tStack trace (bottom of stack at %p):", cr->stack);
@@ -63,7 +63,7 @@ void
 cr_init_stack(struct coroutine *cr, void *(*routine)(void *args), void *args) {
     uintptr_t *stack = __MINT_TOP_OF_STACK(cr->stack);
 
-    __logln_dbg("Setting up the new stack");
+    __logln_dbg_fmt("Setting up the new ", "stack");
 
     // Assembly routine that ensures that
     // the coroutine's return value is in

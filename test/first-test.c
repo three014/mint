@@ -4,16 +4,14 @@
 #include <stdio.h>
 
 void *hello(void *args) {
-
-    mint_return(NULL);
-    __logln_info("Entered 'hello' coroutine");
+    fprintf(stderr, "Entered 'hello' coroutine\n");
     int a = *(int *)args;
     for (int i = 0; i < 10; i++) {
         mint_yield();
-        __logln_info_fmt("Hello number %d!", i);
+        fprintf(stderr, "Hello number %d!\n", i);
     }
 
-    __logln_info_fmt("Got %d from args", a);
+    fprintf(stderr, "Got %d from args\n", a);
 
     return NULL;
 }

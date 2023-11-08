@@ -60,7 +60,7 @@ mint_block_on(
     mint_t curr = rt_current();
     if (curr != M_ROOT) {
         curr_cr = cr_from_handle(curr);
-        __logln_dbg("Retrieved currently running coroutine");
+        __logln_dbg_fmt("Retrieved currently running ", "coroutine");
     } else {
         curr_cr = cache_pop_else_alloc(_c);
         if (curr_cr == NULL) {
@@ -72,7 +72,7 @@ mint_block_on(
         // Set current coroutine to curr
         rt_set_current(curr_cr->self);
 
-        __logln_dbg("Created a new coroutine to represent non-green function");
+        __logln_dbg_fmt("Created a new coroutine to represent non-green ", "function");
     }
 
     // Link curr and new coroutines

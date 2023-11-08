@@ -1,7 +1,7 @@
 lib_LTLIBRARIES = libmint.la
 
 ACLOCAL_AMFLAGS = '-Im4'
-libmint_la_CFLAGS = '-I$(top_srcdir)/include' -DLOG_LEVEL=4 -ggdb
+libmint_la_CFLAGS = '-I$(top_srcdir)/include' -DLOG_LEVEL=4 -ggdb -Wall -Werror
 libmint_la_LDFLAGS = -lpthread
 
 libmint_la_SOURCES = \

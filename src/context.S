@@ -31,13 +31,16 @@ start_coroutine:
         # Pops the function argument `args` off the stack
         popq %rdi
 
+        # Make sure we're aligned again
+        sub $0x8, %rsp
+
         # Start the function for this coroutine
-        call %rax
+        call *%rax
 
         # If we came back, then the coroutine has completed,
         # and if they specified a value to return, we'll move
         # it into %rdi so it can be the first argument to
         # `mint_return`.
         movq %rax, %rdi
-        jmp mint_return
+        call mint_return
      
