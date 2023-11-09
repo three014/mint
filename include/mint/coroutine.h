@@ -7,11 +7,10 @@
 #include <stdlib.h>
 
 #ifndef __MINT_STACK_SIZE
-#define __MINT_STACK_SIZE (0x3000)
+#define __MINT_STACK_SIZE (0x6000)
 #endif
 
 #define __MINT_TOP_OF_STACK(addr) (addr + (__MINT_STACK_SIZE / sizeof(uintptr_t)) - sizeof(uintptr_t))
-//#define __MINT_TOP_OF_STACK(addr) (addr + 4096)
 
 #define M_ROOT 0
 

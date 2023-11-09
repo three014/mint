@@ -23,6 +23,53 @@ mint_unpin(void) {
     return rt_unpin();
 }
 
+int
+mint_spawn(
+    mint_t *restrict handle, 
+    void *(*routine)(void *args), 
+    void *args
+) {
+    int err = M_SUCCESS;
+
+    // Check if we have the runtime
+    if (!owns_rt()) {
+        err = M_NOT_OWNER;
+        goto finally;
+    }
+
+    // Check if we have a spare coroutine object
+    // we can use, or else make a new one
+    cache *_c = rt_cache();
+    struct coroutine *new_cr = cache_pop_else_alloc(_c);
+    if (new_cr == NULL) {
+        err = M_ALLOC_FAIL;
+        goto finally;
+    }
+
+    // Set coroutine to use
+    // user-specified arguments
+    cr_set(new_cr);
+    cr_init_stack(new_cr, routine, args);
+
+    if (rt_current() == M_ROOT) {
+        err = M_NOT_RUNNING;
+        cache_push(_c, new_cr);
+        goto finally;
+    }
+
+    queue_link(rt_ready(), new_cr);
+
+    cr_dbg(new_cr);
+
+    __mint_yield();
+
+    // Give caller the handle
+    *handle = new_cr->self;
+
+finally:
+    return err;
+}
+
 int 
 mint_block_on(
     void *(*routine)(void *args), 
@@ -60,7 +107,7 @@ mint_block_on(
     mint_t curr = rt_current();
     if (curr != M_ROOT) {
         curr_cr = cr_from_handle(curr);
-        __logln_dbg_fmt("Retrieved currently running ", "coroutine");
+        __logln_dbg("Retrieved currently running coroutine");
     } else {
         curr_cr = cache_pop_else_alloc(_c);
         if (curr_cr == NULL) {
@@ -72,7 +119,7 @@ mint_block_on(
         // Set current coroutine to curr
         rt_set_current(curr_cr->self);
 
-        __logln_dbg_fmt("Created a new coroutine to represent non-green ", "function");
+        __logln_dbg("Created a new coroutine to represent non-green function");
     }
 
     // Link curr and new coroutines
@@ -118,6 +165,47 @@ mint_block_on(
 
 cache_new:
     cache_push(_c, new_cr);
+
+finally:
+    return err;
+}
+
+int
+mint_await(mint_t handle, void **ret) {
+    int err = M_SUCCESS;
+
+    if (!owns_rt()) {
+        err = M_NOT_OWNER;
+        goto finally;
+    }
+
+    struct coroutine *handle_cr = cr_from_handle(handle);
+    mint_t curr = rt_current();
+    if (curr == M_ROOT) {
+        err = M_NOT_RUNNING;
+        goto finally;
+    }
+    if (handle_cr->status.tag == COMPLETE) {
+        goto ret;
+    }
+    
+    struct coroutine *curr_cr = cr_from_handle(curr);
+    queue_unlink(rt_ready(), curr_cr);
+    curr_cr->status = STATUS_WAITING(handle_cr->self);
+    queue_link(rt_waiting(), curr_cr); 
+    handle_cr->parent = curr_cr->self;
+
+    __mint_yield();
+
+    assert(handle_cr->status.tag == COMPLETE);
+
+ret:
+    queue_unlink(rt_complete(), handle_cr);
+    if (ret != NULL) {
+        *ret = handle_cr->status.value.ret;
+    }
+
+    cache_push(rt_cache(), handle_cr);
 
 finally:
     return err;
@@ -171,24 +259,22 @@ mint_return(void *ret) {
     }
 
     struct coroutine *curr_cr = cr_from_handle(curr);
-    mint_t parent = curr_cr->parent;
-    struct coroutine *parent_cr = cr_from_handle(parent);
 
-    cr_dbg(curr_cr);
+    //cr_dbg(curr_cr);
 
     // Move current coroutine to 'Complete' list
     queue_unlink(rt_ready(), curr_cr);
     curr_cr->status = STATUS_COMPLETE(ret);
     queue_link(rt_complete(), curr_cr);
 
-    // Assumption #2: The returned coroutine
-    // has to have a parent, or else it'd return to
-    // `mint_block_on`.
-
-    // Move parent coroutine to 'Ready' queue
-    queue_unlink(rt_waiting(), parent_cr);
-    parent_cr->status = STATUS_READY;
-    queue_link(rt_ready(), parent_cr);
+    // If there's a parent, move to 'Ready' queue
+    mint_t parent = curr_cr->parent;
+    if (parent != M_ROOT) {
+        struct coroutine *parent_cr = cr_from_handle(parent);
+        queue_unlink(rt_waiting(), parent_cr);
+        parent_cr->status = STATUS_READY;
+        queue_link(rt_ready(), parent_cr);
+    }
 
     __mint_yield();
 }

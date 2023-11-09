@@ -33,6 +33,7 @@ start_coroutine:
 
         # Make sure we're aligned again
         sub $0x8, %rsp
+        and $-0x10, %rsp
 
         # Start the function for this coroutine
         call *%rax
