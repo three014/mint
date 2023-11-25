@@ -13,6 +13,9 @@ typedef void *(*mroutine_t)(void *args);
 #define M_NOT_RUNNING 0x2
 #define M_ALLOC_FAIL  0x4
 #define M_NOT_DIRECT  0x8
+#define M_BUSY        0x10
+
+#define M_ROOT 0
 
 int  mint_create(mint_t *restrict handle, mroutine_t routine, void *restrict args);
 int  mint_spawn(mint_t *restrict handle, mroutine_t routine, void *restrict args);

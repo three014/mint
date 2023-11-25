@@ -12,8 +12,6 @@
 
 #define __MINT_TOP_OF_STACK(addr) (addr + (__MINT_STACK_SIZE / sizeof(uintptr_t)) - sizeof(uintptr_t))
 
-#define M_ROOT 0
-
 struct coroutine {
     mint_t self;
     mint_t parent;

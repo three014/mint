@@ -1,4 +1,5 @@
 #include "mint.h"
+#include "mint/coroutine.h"
 #include "mint/runtime.h"
 #include "mint/queue.h"
 #include "mint/memcache.h"
@@ -87,10 +88,13 @@ rt_unpin(void) {
     if (thread == self) {
         int result = pthread_mutex_lock(&mtx);
         if (result == 0) {
-            rt.thread = 0;
+            if (rt.current == M_ROOT) {
+                rt.thread = 0;
+                err = M_SUCCESS;
+            } else {
+                err = M_BUSY;
+            }
             pthread_mutex_unlock(&mtx);
-
-            err = M_SUCCESS;
         }
             
     }
