@@ -5,12 +5,12 @@ libmint_la_CFLAGS = '-I$(top_srcdir)/include' -DLOG_LEVEL=4 -ggdb -Wall -Werror
 libmint_la_LDFLAGS = -lpthread
 
 libmint_la_SOURCES = \
-	src/mint.c \
-	src/runtime.c \
-	src/queue.c \
-	src/coroutine.c \
-	src/context.S \
-	src/memcache.c
+	lib/mint.c \
+	lib/runtime.c \
+	lib/queue.c \
+	lib/coroutine.c \
+	lib/context.S \
+	lib/memcache.c
 
 
 TESTS = simple pthread_check simple2

@@ -10,12 +10,17 @@
 #define __MINT_STACK_SIZE (0x5000)
 #endif
 
-#define __MINT_TOP_OF_STACK(addr) (addr + (__MINT_STACK_SIZE / sizeof(uintptr_t)) - sizeof(uintptr_t))
+#define __MINT_TOP_OF_STACK(addr) (addr + __MINT_STACK_SIZE - sizeof(struct coroutine) - sizeof(uintptr_t))
 
+/// The Coroutine Data Structure.
+/// The object itself exists at
+/// the top of a stack, so that the
+/// next available address is right below
+/// the pointer for `bottom_of_stack`.
 struct coroutine {
+    void *bottom_of_stack;
     mint_t self;
     mint_t parent;
-    void *stack;
     struct context ctx;
     struct status status;
     struct coroutine *next;

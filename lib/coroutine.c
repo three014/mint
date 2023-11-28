@@ -20,16 +20,17 @@ void cr_dbg(struct coroutine *cr) {
     __logln_dbg("\tContext:");
     __logln_dbg_fmt("\t\trsp: 0x%lx", cr->ctx.rsp);
     __logln_dbg_fmt("\t\trbp: 0x%lx", cr->ctx.rbp);
-    __logln_dbg_fmt("\tStack trace (bottom of stack at %p):", cr->stack);
-    uintptr_t *stack = __MINT_TOP_OF_STACK(cr->stack);
+    __logln_dbg_fmt("\tStack trace (bottom of stack at %p):", cr->bottom_of_stack);
+    uintptr_t *stack = (uintptr_t *)__MINT_TOP_OF_STACK((uintptr_t)cr->bottom_of_stack);
     for (size_t i = 0; i < __DBG_STACK; i++) {
         __logln_dbg_fmt("\t\t Address %p: 0x%lx", stack, *stack);
         stack--;
     }
 }
 
+/*
 struct coroutine *
-cr_alloc(void) {
+cr_alloc_old(void) {
     struct coroutine *cr = malloc(sizeof *cr);
     if (cr == NULL) {
         goto finally;
@@ -43,7 +44,34 @@ cr_alloc(void) {
         goto finally;
     }
 
-    cr->stack = stack;
+    cr->bottom_of_stack = stack;
+
+finally:
+    return cr;
+}
+*/
+
+struct coroutine *
+cr_alloc(void) {
+    struct coroutine *cr = NULL;
+    void *stack = mmap(
+        NULL,
+        __MINT_STACK_SIZE,
+        PROT_READ | PROT_WRITE,
+        MAP_STACK | MAP_ANONYMOUS | MAP_PRIVATE,
+        -1,
+        0
+    );
+
+    if (stack == MAP_FAILED) {
+        __logln_err_fmt("Failed to map new stack: %s", strerror(errno));
+        goto finally;
+    }
+
+    // Setup coroutine data structure
+    uintptr_t top_of_stack = __MINT_TOP_OF_STACK((uintptr_t)stack);
+    cr = (void *)((uintptr_t)top_of_stack + sizeof(uintptr_t));
+    cr->bottom_of_stack = stack;
 
 finally:
     return cr;
@@ -61,9 +89,7 @@ cr_set(struct coroutine *cr) {
 
 void
 cr_init_stack(struct coroutine *cr, void *(*routine)(void *args), void *args) {
-    uintptr_t *stack = __MINT_TOP_OF_STACK(cr->stack);
-
-    __logln_dbg("Setting up the new stack");
+    uintptr_t *stack = (uintptr_t *)__MINT_TOP_OF_STACK((uintptr_t)cr->bottom_of_stack);
 
     // Assembly routine that ensures that
     // the coroutine's return value is in
@@ -83,7 +109,5 @@ cr_init_stack(struct coroutine *cr, void *(*routine)(void *args), void *args) {
 }
 
 void cr_delete(struct coroutine *cr) {
-    munmap(cr->stack, __MINT_STACK_SIZE);
-    //free(cr->stack);
-    free(cr);
+    (void)munmap(cr->bottom_of_stack, __MINT_STACK_SIZE);
 }
